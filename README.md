@@ -100,7 +100,7 @@ Accounts saved to `accounts.json`:
 
 Uses [Email API](https://email-api.example.com) — Cloudflare Email Routing + Worker API.
 
-> **Get an API key:** Contact sales to purchase access to the Email API endpoint.
+> **Get an API key:** Contact [@accustor](https://t.me/accustor) on Telegram to purchase access to the Email API endpoint.
 
 Domains (configurable):
 - `example.com`
