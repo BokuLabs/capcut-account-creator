@@ -1,12 +1,12 @@
 # CapCut Account Creator
 
-Full auto CapCut account registration with device spoofing, TempBokuMail integration, and parallel workers.
+Full auto CapCut account registration with device spoofing, Email API integration, and parallel workers.
 
 ## Features
 
 - ✅ **Full Device Spoofing** — unique fingerprint per account (device_id, verify_fp, ms_token, ttwid)
 - ✅ **mix_mode Encoding** — XOR 0x05 hex encoding (CapCut/TikTok passport)
-- ✅ **TempBokuMail Integration** — auto generate temp email + auto poll OTP
+- ✅ **Email API Integration** — auto generate temp email + auto poll OTP
 - ✅ **OTP Auto-Extract** — supports "code is XXXXX", "code: XXXXX", standalone digits
 - ✅ **OTP Resend** — auto resend up to 2x if not received
 - ✅ **Stabilize Phase** — waits for late-arriving OTP emails
@@ -53,7 +53,7 @@ python3 capcut_register.py bulk 20 5
 2. **Region** — POST /passport/web/region/ → CSRF token + login domain
 3. **Check Email** — POST /passport/web/user/check_email_registered
 4. **Send OTP** — POST /passport/web/email/send_code/ (type=34)
-5. **Poll OTP** — TempBokuMail Worker API (Cloudflare Email Routing)
+5. **Poll OTP** — Email API Worker (Cloudflare Email Routing)
 6. **Register** — POST /passport/web/email/register_verify_login/
 
 ## Architecture
@@ -63,7 +63,7 @@ capcut_register.py
 ├── mix_encode()           # XOR 0x05 encoding
 ├── DeviceSpoof            # Device fingerprint generator
 ├── CapCutClient           # Passport API client
-├── TempBokuMailProvider   # Email + OTP via CF Worker
+├── EmailAPIProvider       # Email + OTP via CF Worker
 ├── _create_one_account()  # Single account worker
 └── bulk_create()          # Parallel orchestrator
 ```
@@ -73,8 +73,8 @@ capcut_register.py
 Edit in `capcut_register.py`:
 
 ```python
-TBM_WORKER_API = "https://email-api.bokumanga.my.id"
-TBM_DOMAINS = ["bokumanga.my.id", "bokushops.my.id", "demopain.biz.id"]
+TBM_WORKER_API = "https://email-api.example.com"
+TBM_DOMAINS = ["example.com", "example.org", "example.net"]
 DEFAULT_REGION = "US"
 ```
 
@@ -84,7 +84,7 @@ Accounts saved to `accounts.json`:
 ```json
 [
   {
-    "email": "naruto1234@bokumanga.my.id",
+    "email": "user1234@example.com",
     "password": "RandomPass123!@#",
     "user_id": 7653465574639666189,
     "user_id_str": "7653465574639666189",
@@ -98,12 +98,14 @@ Accounts saved to `accounts.json`:
 
 ## Email Provider
 
-Uses [TempBokuMail](https://t.me/TempBokuBot) — Telegram temp mail bot with Cloudflare Email Routing.
+Uses [Email API](https://email-api.example.com) — Cloudflare Email Routing + Worker API.
 
-Domains:
-- `bokumanga.my.id`
-- `bokushops.my.id`
-- `demopain.biz.id`
+> **Get an API key:** Contact sales to purchase access to the Email API endpoint.
+
+Domains (configurable):
+- `example.com`
+- `example.org`
+- `example.net`
 
 ## Disclaimer
 

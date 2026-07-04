@@ -2,7 +2,7 @@
 """
 CapCut Account Creator — Full Device Spoofing
 Handles: fingerprint gen, mix_mode encoding, passport API, session management
-Email provider is pluggable (default: dummy, will integrate TempBokuMail later)
+Email provider is pluggable (default: dummy, will integrate Email API later)
 """
 import json
 import random
@@ -369,7 +369,7 @@ class CapCutClient:
             return {"success": False, "error": "otp_send_failed"}
 
         # At this point, caller needs to provide the OTP code
-        # This is where TempBokuMail integration goes
+        # This is where Email API integration goes
         if not otp_code:
             return {
                 "success": False,
@@ -418,7 +418,7 @@ def save_account(account: dict, filepath: str = ACCOUNTS_FILE):
 # ============================================================
 class EmailProvider:
     """
-    Base email provider. Override with TempBokuMail, mail.tm, etc.
+    Base email provider. Override with EmailAPIProvider, mail.tm, etc.
     Must implement: create_email() → (email, provider_data)
                      get_otp(provider_data) → str or None
     """
@@ -448,12 +448,12 @@ class DummyEmailProvider(EmailProvider):
 
 
 # ============================================================
-# TEMPBOKUMAIL PROVIDER (Cloudflare Email Worker)
+# EMAIL API PROVIDER (Cloudflare Email Worker)
 # ============================================================
-TBM_WORKER_API = "https://email-api.bokumanga.my.id"
-TBM_DOMAINS = ["bokumanga.my.id", "bokushops.my.id", "demopain.biz.id"]
+TBM_WORKER_API = "https://email-api.example.com"
+TBM_DOMAINS = ["example.com", "example.org", "example.net"]
 
-# Anime names for random prefix (same list as TempBokuBot)
+# Anime names for random prefix
 _TBM_NAMES = [
     "naruto", "sasuke", "sakura", "kakashi", "hinata", "itachi", "madara",
     "luffy", "zoro", "sanji", "nami", "ace", "shanks", "law",
@@ -501,10 +501,13 @@ def _extract_otp_from_text(text: str) -> str:
     return None
 
 
-class TempBokuMailProvider(EmailProvider):
+class EmailAPIProvider(EmailProvider):
     """
-    TempBokuMail integration — Cloudflare Email Routing + Worker API.
+    Email API integration — Cloudflare Email Routing + Worker API.
     Creates temp email, polls worker for incoming OTP.
+
+    Purchase an API key to use this provider:
+    https://email-api.example.com
     """
 
     def __init__(self, api_url: str = TBM_WORKER_API, domains: list = None):
@@ -512,11 +515,11 @@ class TempBokuMailProvider(EmailProvider):
         self.domains = domains or TBM_DOMAINS
 
     def create_email(self) -> tuple:
-        """Generate random email on TempBokuMail domain."""
+        """Generate random email on configured domain."""
         prefix = random.choice(_TBM_NAMES) + ''.join(random.choices(string.digits, k=4))
         domain = random.choice(self.domains)
         email = f"{prefix}@{domain}"
-        print(f"  📧 TempBokuMail: {email}")
+        print(f"  📧 Email: {email}")
         return email, {"email": email, "prefix": prefix, "domain": domain}
 
     def get_otp(self, provider_data: dict, timeout: int = 90) -> str:
@@ -626,11 +629,11 @@ class TempBokuMailProvider(EmailProvider):
 
 
 # ============================================================
-# MAIN — FULL AUTO (TempBokuMail + CapCut)
+# MAIN — FULL AUTO (Email API + CapCut)
 # ============================================================
 def main():
     print("=" * 60)
-    print("  CapCut Account Creator — Full Auto (TempBokuMail)")
+    print("  CapCut Account Creator — Full Auto (Email API)")
     print("=" * 60)
 
     # Generate device fingerprint
@@ -644,8 +647,8 @@ def main():
     # Create client
     client = CapCutClient(device, verbose=True)
 
-    # Email provider — TempBokuMail
-    email_provider = TempBokuMailProvider()
+    # Email provider — Email API
+    email_provider = EmailAPIProvider()
 
     # Generate email
     print(f"\n📧 Generating email...")
@@ -675,8 +678,8 @@ def main():
         print("[!] Failed to send OTP!")
         return
 
-    # Step 4: Wait for OTP (auto-poll TempBokuMail)
-    print(f"\n⏳ Waiting for OTP via TempBokuMail...")
+    # Step 4: Wait for OTP (auto-poll Email API)
+    print(f"\n⏳ Waiting for OTP via Email API...")
     otp_code = email_provider.get_otp(email_data, timeout=120)
     if not otp_code:
         print("[!] No OTP received!")
@@ -726,7 +729,7 @@ def _create_one_account(idx: int, total: int) -> dict:
         try:
             device = DeviceSpoof.generate()
             client = CapCutClient(device, verbose=False)
-            email_provider = TempBokuMailProvider()
+            email_provider = EmailAPIProvider()
 
             email, email_data = email_provider.create_email()
             password = ''.join(random.choices(string.ascii_letters + string.digits + "!@#$%", k=16))
